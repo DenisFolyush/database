@@ -1,0 +1,5 @@
+database:
+  host: "localhost"              # Залиште "localhost", якщо сервер MySQL працює локально
+  user: "root"  # Введіть ваше ім'я користувача MySQL
+  password: "bebra4777"         # Введіть ваш пароль для MySQL
+  database: "mydb"               # Назва бази даних, яку ви створили (lab3)
