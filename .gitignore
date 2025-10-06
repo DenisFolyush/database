@@ -1,0 +1,54 @@
+# === Python ===
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+.mypy_cache/
+.pyre/
+.pytest_cache/
+.cache/
+.coverage
+htmlcov/
+
+# === Virtualenv ===
+venv/
+.venv/
+ENV/
+DB_lab4/venv/
+
+# === Flask / instance ===
+instance/
+
+# === Logs ===
+*.log
+logs/
+
+# === Build / dist ===
+dist/
+build/
+*.egg-info/
+.eggs/
+
+# === OS / IDE ===
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# === Secrets / env ===
+.env
+*.env
+*.pem
+*.key
+certs/
+
+# === SQL dumps ===
+*.sql
+# але залишаємо твій приклад даних:
+!DB_lab4/data.sql
+
+# === App config з секретами (локальні значення) ===
+app/config/app.yml
+# залишаємо публічний шаблон:
+!app/config/app.sample.yml
+DB_lab4/app/config/app.yml
