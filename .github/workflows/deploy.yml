@@ -50,3 +50,4 @@ jobs:
             [ -f "$APP/requirements.txt" ] && "$APP/venv/bin/pip" install -r "$APP/requirements.txt" || true
       
             echo "✅ Deployed without restart (APP=$APP)"
+
