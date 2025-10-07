@@ -7,7 +7,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Deploy over SSH
+      - name: SSH deploy 
         uses: appleboy/ssh-action@v1.0.3
         with:
           host:     ${{ secrets.SSH_HOST }}
@@ -17,14 +17,10 @@ jobs:
           script: |
             set -e
             APP=~/database/DB_lab4
-            if [ -d "$APP/.git" ]; then
-              git -C "$APP" pull --ff-only
-            else
-              git clone --depth=1 -b main https://github.com/DenisFolyush/database "$APP"
-            fi
-            python3 -m venv "$APP/venv" 2>/dev/null || true
+            [ -d "$APP/.git" ] || { echo "❌ $APP не знайдено (repo must already exist)"; exit 1; }
+            git -C "$APP" pull --ff-only
+            # venv лише якщо нема
+            [ -d "$APP/venv" ] || python3 -m venv "$APP/venv"
             "$APP/venv/bin/pip" -q install -U pip wheel
             [ -f "$APP/requirements.txt" ] && "$APP/venv/bin/pip" install -r "$APP/requirements.txt" || true
-            # опційно: розкоментуй наступний рядок, коли треба перезапустити сервіс
-            # sudo systemctl restart flask
-            echo "OK"
+            echo "✅ Deployed without restart"
