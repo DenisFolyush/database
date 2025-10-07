@@ -1,41 +1,30 @@
-name: deploy
-
+name: Deploy to VM
 on:
+  push: { branches: [main] }
   workflow_dispatch:
-  push:
-    branches: [ main ]
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
-
-      - name: Set up SSH key
-        run: |
-          mkdir -p ~/.ssh && chmod 700 ~/.ssh
-          echo "$SSH_KEY" > ~/.ssh/id_ed25519
-          chmod 600 ~/.ssh/id_ed25519
-          ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts
-        env:
-          SSH_KEY: ${{ secrets.SSH_KEY }}
-          SSH_HOST: ${{ secrets.SSH_HOST }}
-
-      - name: Sync repo to EC2
-        run: |
-          rsync -az --delete \
-            --exclude ".git" \
-            --exclude "venv" \
-            ./ ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/home/ubuntu/database/DB_lab4/
-
-      - name: Install deps on EC2 (no restart)
-        run: |
-          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} <<'EOSSH'
-          set -e
-          cd /home/ubuntu/database/DB_lab4
-          python3 -m venv venv
-          ./venv/bin/pip install --upgrade pip
-          # все, без systemctl restart
-          EOSSH
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host:     ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key:      ${{ secrets.SSH_KEY }}
+          port:     ${{ secrets.SSH_PORT || 22 }}
+          script: |
+            set -e
+            APP=~/database/DB_lab4
+            if [ -d "$APP/.git" ]; then
+              git -C "$APP" pull --ff-only
+            else
+              git clone --depth=1 -b main https://github.com/DenisFolyush/database "$APP"
+            fi
+            python3 -m venv "$APP/venv" 2>/dev/null || true
+            "$APP/venv/bin/pip" -q install -U pip wheel
+            [ -f "$APP/requirements.txt" ] && "$APP/venv/bin/pip" install -r "$APP/requirements.txt" || true
+            # опційно: розкоментуй наступний рядок, коли треба перезапустити сервіс
+            # sudo systemctl restart flask
+            echo "OK"
