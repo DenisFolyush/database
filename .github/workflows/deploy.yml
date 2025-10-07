@@ -7,7 +7,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: SSH deploy 
+      - name: SSH deploy (no clone)
         uses: appleboy/ssh-action@v1.0.3
         with:
           host:     ${{ secrets.SSH_HOST }}
@@ -16,11 +16,22 @@ jobs:
           port:     ${{ secrets.SSH_PORT || 22 }}
           script: |
             set -e
-            APP=~/database/DB_lab4
-            [ -d "$APP/.git" ] || { echo "❌ $APP не знайдено (repo must already exist)"; exit 1; }
+            BASE=~/database
+            APP="$BASE"
+            if [ -d "$BASE/.git" ]; then
+              echo "→ repo at $BASE"
+            elif [ -d "$BASE/DB_lab4/.git" ]; then
+              APP="$BASE/DB_lab4"
+              echo "→ repo at $APP"
+            else
+              echo "❌ Git repo not found at $BASE or $BASE/DB_lab4 (run initial clone once on the VM)"; exit 1
+            fi
+
             git -C "$APP" pull --ff-only
-            # venv лише якщо нема
+
+            # venv тільки якщо відсутній
             [ -d "$APP/venv" ] || python3 -m venv "$APP/venv"
             "$APP/venv/bin/pip" -q install -U pip wheel
             [ -f "$APP/requirements.txt" ] && "$APP/venv/bin/pip" install -r "$APP/requirements.txt" || true
-            echo "✅ Deployed without restart"
+
+            echo "✅ Deployed without restart (APP=$APP)"
