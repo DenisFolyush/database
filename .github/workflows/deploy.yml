@@ -15,7 +15,7 @@ jobs:
           key:      ${{ secrets.SSH_KEY }}
           port:     ${{ secrets.SSH_PORT || 22 }}
           script: |
-            set -e
+            set -euo pipefail
             BASE=~/database
             APP="$BASE"
             if [ -d "$BASE/.git" ]; then
@@ -24,14 +24,29 @@ jobs:
               APP="$BASE/DB_lab4"
               echo "→ repo at $APP"
             else
-              echo "❌ Git repo not found at $BASE or $BASE/DB_lab4 (run initial clone once on the VM)"; exit 1
+              echo "❌ Git repo not found at $BASE or $BASE/DB_lab4"; exit 1
             fi
-
-            git -C "$APP" pull --ff-only
-
-            # venv тільки якщо відсутній
+      
+            cd "$APP"
+            git fetch --all
+      
+            # Якщо є локальні зміни або untracked — бекапнемо й приберемо
+            if ! git diff --quiet || [ -n "$(git ls-files --others --exclude-standard)" ]; then
+              BK="$HOME/backup_$(basename "$APP")_$(date +%Y%m%d_%H%M%S).tar.gz"
+              echo "↷ Local changes/untracked detected → backup to $BK"
+              tar -C "$APP" -czf "$BK" \
+                --exclude='./.git' --exclude='./venv' --exclude='./__pycache__' \
+                --exclude='./.env' --exclude='./*.log' .
+              git reset --hard
+              git clean -fd
+            fi
+      
+            # Виставляємо рівно на origin/main
+            git reset --hard origin/main
+      
+            # venv лише якщо нема
             [ -d "$APP/venv" ] || python3 -m venv "$APP/venv"
             "$APP/venv/bin/pip" -q install -U pip wheel
             [ -f "$APP/requirements.txt" ] && "$APP/venv/bin/pip" install -r "$APP/requirements.txt" || true
-
+      
             echo "✅ Deployed without restart (APP=$APP)"
