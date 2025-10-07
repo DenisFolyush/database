@@ -301,3 +301,4 @@ def delete_city(id_city):
     """
     CityService.delete_city(id_city)
     return jsonify({"message": "City deleted successfully"})
+ 
